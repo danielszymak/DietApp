@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+Dish details
+{% endblock %}
+
+{% block my_products %}
+<ul class="nav navbar-nav navbar-right">
+    <li class="nav-item"><a class="nav-link active" href="{% url 'my_products' %}">My products</a></li>
+</ul>
+{% endblock %}
+
+{% block nav %}
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light" style="margin: -20px 0 20px 0;">
+    <div class="container">
+        <ol class="breadcrumb bg-light">
+            <li class="breadcrumb-item"><a href="{% url 'week_plan' %}">Week plan</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ dish.name }} on {{ dish.day }}</li>
+        </ol>
+    </div>
+</nav>
+
+{% endblock %}
+
+{% block content %}
+    <form class="form-group" method="post" action="{% url 'dish_details' dish.id %}">
+        {% csrf_token %}
+        {{ form | crispy }}
+        <div id="ing-container">
+        {{ formset.management_form }}
+        {% for item in formset %}
+            <div class="ing remove-ing">
+                {{ item | crispy }}
+                <button class="remove-form-row" type="button" value="remove_ingredient" style="margin-bottom: 10px;">Remove ingredient</button>
+            </div>
+        {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-secondary" style="margin-top: 10px;" name="update" value="update">Update dish</button>
+        <button type="submit" class="btn btn-secondary" style="margin-top: 10px;" name="delete" value="delete">Delete dish</button>
+    </form>
+    <script>
+        function transformForm() {
+            let lastForm = document.querySelector('.ing:last-of-type')
+            console.log(lastForm)
+            totalForms = document.getElementById('id_form-TOTAL_FORMS')
+            document.getElementById('id_form-INITIAL_FORMS').value = 0
+            num = Number(totalForms.value) - 1
+            lastForm.children[0].id = "div_id_form-" + num + "-ingredient"
+            lastForm.children[0].children[0].setAttribute('for', "id_form-" + num + "-ingredient")
+            lastForm.children[0].children[1].children[0].setAttribute('name', "form-" + num + "-ingredient")
+            lastForm.children[0].children[1].children[0].id = "id_form-" + num + "-ingredient"
+            lastForm.children[1].id= "div_id_form-" + num + "-mass"
+            lastForm.children[1].children[0].setAttribute('for', "id_form-" + num + "-mass")
+            lastForm.children[1].children[1].children[0].setAttribute('name', "form-" + num + "-mass")
+            lastForm.children[1].children[1].children[0].id = "id_form-" + num + "-mass"
+            lastForm.children[1].children[1].children[0].value = ''
+            lastForm.children[2].id = "id_form-" + num + "-id"
+            lastForm.children[2].setAttribute('name', "form-" + num + "-id")
+            lastForm.children[3].classList.add('add-form-row')
+            lastForm.children[3].classList.remove('remove-form-row')
+            lastForm.children[3].value = 'add-ingredient'
+            lastForm.children[3].innerHTML = 'Add next ingredient'
+            lastForm.classList.add('add-ing')
+            lastForm.classList.remove('remove-ing')
+        }
+
+        transformForm()
+
+        function addForm() {
+            let totalForms = document.getElementById('id_form-TOTAL_FORMS')
+            let ing = document.querySelector('.ing:last-of-type')
+            let ing2 = ing.cloneNode(true)
+            ing2.children[0].id = "div_id_form-" + totalForms.value + "-ingredient"
+            ing2.children[0].children[0].setAttribute('for', "id_form-" + totalForms.value + "-ingredient")
+            ing2.children[0].children[1].children[0].setAttribute('name', "form-" + totalForms.value + "-ingredient")
+            ing2.children[0].children[1].children[0].id = "id_form-" + totalForms.value + "-ingredient"
+            ing2.children[1].id= "div_id_form-" + totalForms.value + "-mass"
+            ing2.children[1].children[0].setAttribute('for', "id_form-" + totalForms.value + "-mass")
+            ing2.children[1].children[1].children[0].setAttribute('name', "form-" + totalForms.value + "-mass")
+            ing2.children[1].children[1].children[0].id = "id_form-" + totalForms.value + "-mass"
+            ing2.children[1].children[1].children[0].value = ''
+            ing2.children[2].id = "id_form-" + totalForms.value + "-id"
+            ing2.children[2].setAttribute('name', "form-" + totalForms.value + "-id")
+            ing.children[3].classList.remove('add-form-row')
+            ing.children[3].classList.add('remove-form-row')
+            ing.children[3].value = 'remove-ingredient'
+            ing.children[3].innerHTML = 'Remove ingredient'
+            ing.classList.remove("add-ing")
+            ing.classList.add("remove-ing")
+            document.getElementById('ing-container').appendChild(ing2)
+            totalForms.value = Number(totalForms.value) + 1
+            ing.children[3].removeEventListener('click', addForm)
+            x = document.querySelector('.add-form-row:last-of-type')
+            x.addEventListener('click', addForm)
+            removeButtonSet = document.querySelectorAll('.remove-form-row')
+            for (let i = 0; i < removeButtonSet.length; i++) {
+                removeButtonSet[i].addEventListener('click', removeForm)
+            }
+        }
+
+        function removeForm(e) {
+            let ing = e.target.parentNode
+            let totalForms = document.getElementById('id_form-TOTAL_FORMS')
+            document.getElementById('ing-container').removeChild(ing)
+            totalForms.value = Number(totalForms.value) - 1
+            let ingSet = document.querySelectorAll('.ing')
+            for (let i = 0; i < ingSet.length; i++) {
+                ingSet[i].children[0].id = "div_id_form-" + i + "-ingredient"
+                ingSet[i].children[0].children[0].setAttribute('for', "id_form-" + i + "-ingredient")
+                ingSet[i].children[0].children[1].children[0].setAttribute('name', "form-" + i + "-ingredient")
+                ingSet[i].children[0].children[1].children[0].id = "id_form-" + i + "-ingredient"
+                ingSet[i].children[1].id= "div_id_form-" + i + "-mass"
+                ingSet[i].children[1].children[0].setAttribute('for', "id_form-" + i + "-mass")
+                ingSet[i].children[1].children[1].children[0].setAttribute('name', "form-" + i + "-mass")
+                ingSet[i].children[1].children[1].children[0].id = "id_form-" + i + "-mass"
+                ingSet[i].children[2].id = "id_form-" + i + "-id"
+                ingSet[i].children[2].setAttribute('name', "form-" + i + "-id")
+            }
+        }
+
+        let removeButtonSet = document.querySelectorAll('.remove-form-row')
+        for (let i = 0; i < removeButtonSet.length; i++) {
+            removeButtonSet[i].addEventListener('click', removeForm)
+        }
+
+        let add_button = document.querySelector('.add-form-row:last-of-type')
+        add_button.addEventListener('click', addForm)
+    </script>
+{% endblock %}

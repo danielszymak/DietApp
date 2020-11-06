@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+Product details
+{% endblock %}
+
+{% block my_products %}
+<ul class="nav navbar-nav navbar-right">
+    <li class="nav-item"><a class="nav-link active" href="{% url 'my_products' %}">My products</a></li>
+</ul>
+{% endblock %}
+
+{% block nav %}
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light" style="margin: -20px 0 20px 0;">
+    <div class="container">
+        <ol class="breadcrumb bg-light">
+            <li class="breadcrumb-item"><a href="{% url 'my_products' %}">My products</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ item.product.name }}</li>
+        </ol>
+    </div>
+</nav>
+
+{% endblock %}
+
+{% block content %}
+    <form class="form-group" method="post" action="{% url 'product_details' item.id %}">
+        {{ form | crispy }}
+        {% csrf_token %}
+        <button type="submit" class="btn btn-secondary" style="margin-top: 10px;" name="update" value="update">Update product</button>
+        <button type="submit" class="btn btn-secondary" style="margin-top: 10px;" name="delete" value="delete">Delete product</button>
+    </form>
+{% endblock %}
