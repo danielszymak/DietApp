@@ -6,6 +6,12 @@
 Home view
 {% endblock %}
 
+{% block style %}
+    .wrapper {
+        min-height: calc(100vh - 15vh - 20px - 20px - 10px - 80px);
+    }
+{% endblock %}
+
 {% block script %}
     <script src="{% static 'js/script.js' %}"></script>
 {% endblock %}
@@ -15,7 +21,7 @@ Home view
 <nav class="navbar navbar-expand-lg navbar-light bg-light" style="margin: -20px 0 20px 0;">
     <div class="container">
         <ol class="breadcrumb bg-light">
-            <li class="breadcrumb-item"><a href="{% url 'my_products' %}">My products</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'week_plan' %}" class="text-reset text-decoration-none">Week plan</a></li>
             <li class="breadcrumb-item active" aria-current="page">Add new dish</li>
         </ol>
     </div>

@@ -1,6 +1,7 @@
 from django import forms
 from food_database.models import Products, CATEGORIES
-from .models import Ingredients
+from .models import Ingredients, ProductToUser
+from django.db.models import Q
 
 DAYS = (('monday', 'monday'),
         ('tuesday', 'tuesday'),
@@ -9,7 +10,6 @@ DAYS = (('monday', 'monday'),
         ('friday', 'friday'),
         ('saturday', 'saturday'),
         ('sunday', 'sunday'))
-
 
 class FoodSearch(forms.Form):
     name = forms.CharField(max_length=100, required=False, label="You are looking for a product? Put it's name here:")
@@ -30,13 +30,21 @@ class NewDish(forms.Form):
     time = forms.TimeField(label="Time", help_text='Format: hh:mm - seconds are ignored')
 
 
-class NewIngredient(forms.Form):
-    ingredient = forms.ModelChoiceField(queryset=Products.objects.all())
-    mass = forms.IntegerField(min_value=0)
+def create_new_ingredient_form_set(request):
 
+    class NewIngredient(forms.ModelForm):
 
-# NewIngredientFormSet = forms.formset_factory(NewIngredient, extra=1)
+        user = request.user
 
-NewIngredientFormSet = forms.modelformset_factory(Ingredients, exclude={'dish'}, extra=1)
+        ingredient = forms.ModelChoiceField(queryset=ProductToUser.objects.filter(Q(user=1) | Q(user=user)))
+        mass = forms.IntegerField(min_value=1)
+
+        class Meta:
+            model = Ingredients
+            exclude = {'dish'}
+
+    IngredientFormSet = forms.modelformset_factory(Ingredients, form=NewIngredient, extra=1)
+
+    return IngredientFormSet
 
 

@@ -33,7 +33,7 @@ My products
         <tbody>
         {% for row in selected_data %}
             <tr>
-                <td><a href="{% url 'product_details' row.id %}">{{ row.name }}</a></td>
+                <td><a href="{% url 'product_details' row.id %}" class="text-reset text-decoration-none">{{ row.name }}</a></td>
                 <td>{{ row.category }}</td>
                 <td>{{ row.calories }}</td>
                 <td>{{ row.proteins }}</td>

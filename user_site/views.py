@@ -2,9 +2,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import ProductToUser, Dish, Ingredients
 from food_database.models import Products
 from django.contrib.auth.decorators import login_required
-from .forms import NewProduct, NewDish, FoodSearch, NewIngredientFormSet, NewIngredient
+from .forms import NewProduct, NewDish, FoodSearch, create_new_ingredient_form_set
 from datetime import time
 from django.db.models import Q
+from django.db import IntegrityError
+
+
+class Error(Exception):
+    pass
+
 
 @login_required
 def food_table(request):
@@ -73,15 +79,25 @@ def product_details(request, id):
     if request.method == "POST":
         if 'update' in request.POST:
             form = NewProduct(data=request.POST)
-            if form.is_valid():
-                item.product.name=form.cleaned_data['name']
-                item.product.category=form.cleaned_data['category']
-                item.product.proteins=form.cleaned_data['proteins']
-                item.product.carbohydrates=form.cleaned_data['carbohydrates']
-                item.product.sugars=form.cleaned_data['sugars']
-                item.product.fats=form.cleaned_data['fats']
-                item.product.calories=round(form.cleaned_data['proteins'] * 4 + form.cleaned_data['carbohydrates'] * 4 + form.cleaned_data['fats'] * 9)
-                item.product.save()
+            try:
+                if form.is_valid():
+                    item.product.name=form.cleaned_data['name']
+                    item.product.category=form.cleaned_data['category']
+                    item.product.proteins=form.cleaned_data['proteins']
+                    item.product.carbohydrates=form.cleaned_data['carbohydrates']
+                    item.product.sugars=form.cleaned_data['sugars']
+                    item.product.fats=form.cleaned_data['fats']
+                    item.product.calories=round(form.cleaned_data['proteins'] * 4 + form.cleaned_data['carbohydrates'] * 4 + form.cleaned_data['fats'] * 9)
+                    item.product.save()
+            except IntegrityError as e:
+                if str(e).startswith("CHECK"):
+                    msg = str(e)[25:]
+                elif str(e).startswith("UNIQUE"):
+                    msg = "Product with this name already exists. Choose another name."
+                print(msg)
+                return render(request, "user_site/product_details.html", {"item": item,
+                                                                          "form": form,
+                                                                          "msg": msg})
         elif 'delete' in request.POST:
             item.product.delete()
         return redirect('my_products')
@@ -102,59 +118,30 @@ def add_product(request):
     if request.method == "POST":
         form = NewProduct(data=request.POST)
         if form.is_valid():
-            new_product = Products(name=form.cleaned_data['name'],
-                                   category=form.cleaned_data['category'],
-                                   proteins=form.cleaned_data['proteins'],
-                                   carbohydrates=form.cleaned_data['carbohydrates'],
-                                   sugars=form.cleaned_data['sugars'],
-                                   fats=form.cleaned_data['fats'],
-                                   calories=round(form.cleaned_data['proteins'] * 4 + form.cleaned_data['carbohydrates'] * 4 + form.cleaned_data['fats'] * 9))
-            new_product.save()
-            new_product_to_user = ProductToUser(user=request.user,
-                                                product=new_product)
-            new_product_to_user.save()
+            try:
+                new_product = Products(name=form.cleaned_data['name'],
+                                       category=form.cleaned_data['category'],
+                                       proteins=form.cleaned_data['proteins'],
+                                       carbohydrates=form.cleaned_data['carbohydrates'],
+                                       sugars=form.cleaned_data['sugars'],
+                                       fats=form.cleaned_data['fats'],
+                                       calories=round(form.cleaned_data['proteins'] * 4 + form.cleaned_data['carbohydrates'] * 4 + form.cleaned_data['fats'] * 9))
+                new_product.save()
+                new_product_to_user = ProductToUser(user=request.user,
+                                                    product=new_product)
+                new_product_to_user.save()
+            except IntegrityError as e:
+                if str(e).startswith("CHECK"):
+                    msg = str(e)[25:]
+                elif str(e).startswith("UNIQUE"):
+                    msg = "Product with this name already exists. Choose another name."
+                print(msg)
+                return render(request, "user_site/new_product.html", {'form': form,
+                                                                      'msg': msg})
             return redirect('my_products')
     else:
         form = NewProduct()
     return render(request, "user_site/new_product.html", {'form': form})
-
-
-# @login_required
-# def week_plan(request):
-#
-#     dish_data = Dish.objects.all()
-#
-#     dish_table = [["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]]
-#     for i in range(1, 1441):
-#         dish_table.append([])
-#         for j in range(8):
-#             dish_table[i].append("")
-#             if j == 0:
-#                 dish_table[i][j]=time(int((i-1)/60), int((i-1)%60)).strftime("%H:%M")
-#             else:
-#                 for dish in dish_data:
-#                     if dish.user == request.user:
-#                         if dish.day == dish_table[0][j].lower() and time(hour=dish.time.hour, minute=dish.time.minute).strftime("%H:%M") == dish_table[i][0]:
-#                             dish_table[i][j] = dish
-#                             break
-#                         else:
-#                             dish_table[i][j] = ""
-#                     else:
-#                         dish_table[i][j] = ""
-#     i = 0
-#     while i < (len(dish_table)-1):
-#         i += 1
-#         try:
-#             "".join(dish_table[i][1:]) == ""
-#             del dish_table[i]
-#             i -= 1
-#         except TypeError:
-#             continue
-#
-#     if dish_table == [["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]]:
-#         dish_table = ''
-#
-#     return render(request, 'user_site/week_plan.html', {'dish_table': dish_table})
 
 
 @login_required
@@ -165,7 +152,7 @@ def week_plan(request):
     dish_table = [["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]]
 
     for dish in dish_data:
-        for i in range(len(dish_table[0])-1):
+        for i in range(len(dish_table[0])):
             if dish.day == dish_table[0][i].lower():
                 dish_table.append([])
                 for j in range(8):
@@ -177,34 +164,61 @@ def week_plan(request):
 
     if dish_table == [["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]]:
         dish_table = ''
-
     return render(request, 'user_site/week_plan.html', {'dish_table': dish_table})
 
 
 @login_required
 def dish_details(request, id):
+    NewIngredientFormSet = create_new_ingredient_form_set(request)
     dish = get_object_or_404(Dish, pk=id)
     ingredients = Ingredients.objects.filter(dish=dish)
     if request.method == "POST":
         if 'update' in request.POST:
             dish_form = NewDish(data=request.POST)
             ing_formset = NewIngredientFormSet(data=request.POST)
-            if dish_form.is_valid() and ing_formset.is_valid():
-                dish.user = request.user
-                dish.name = dish_form.cleaned_data['name']
-                dish.day = dish_form.cleaned_data['day']
-                dish.time = time(hour=dish_form.cleaned_data['time'].hour, minute=dish_form.cleaned_data['time'].minute)
-                dish.save()
-                for ing in ingredients:
-                    ing.delete()
-                for item in ing_formset:
-                    if item.cleaned_data == {}:
-                        continue
-                    else:
-                        ingredient = Ingredients(dish=dish,
-                                                 ingredient=item.cleaned_data['ingredient'],
-                                                 mass=item.cleaned_data['mass'])
-                        ingredient.save()
+            try:
+                if dish_form.is_valid() and ing_formset.is_valid():
+                    dish.user = request.user
+                    dish.name = dish_form.cleaned_data['name']
+                    dish.day = dish_form.cleaned_data['day']
+                    dish.time = time(hour=dish_form.cleaned_data['time'].hour, minute=dish_form.cleaned_data['time'].minute)
+                    dish.save()
+                    for ing in ingredients:
+                        ing.delete()
+                    for item in ing_formset:
+                        if item.cleaned_data == {}:
+                            continue
+                        else:
+                            ingredient = Ingredients(dish=dish,
+                                                     ingredient=item.cleaned_data['ingredient'],
+                                                     mass=item.cleaned_data['mass'])
+                            ingredient.save()
+                else:
+                    e = Error("You cannot pass only one argument to ingredient form! Only any or both are possible.")
+                    msg = str(e)
+                    data = {'name': dish.name,
+                            'day': dish.day,
+                            'time': time(hour=dish.time.hour, minute=dish.time.minute).strftime("%H:%M")}
+                    dish_form = NewDish(data=data)
+                    ing_formset = NewIngredientFormSet(queryset=Ingredients.objects.filter(dish=dish))
+                    return render(request, "user_site/dish_details.html", {"dish": dish,
+                                                                           "form": dish_form,
+                                                                           "formset": ing_formset,
+                                                                           "msg": msg})
+            except IntegrityError as e:
+                if str(e).startswith("CHECK"):
+                    msg = str(e)[25:]
+                elif str(e).startswith("UNIQUE"):
+                    msg = "Dish planned on this day with this name or in this hour already exists. Change day, name or hour of the dish."
+                data = {'name': dish.name,
+                        'day': dish.day,
+                        'time': time(hour=dish.time.hour, minute=dish.time.minute).strftime("%H:%M")}
+                dish_form = NewDish(data=data)
+                ing_formset = NewIngredientFormSet(queryset=Ingredients.objects.filter(dish=dish))
+                return render(request, "user_site/dish_details.html", {"dish": dish,
+                                                                       "form": dish_form,
+                                                                       "formset": ing_formset,
+                                                                       "msg": msg})
         elif 'delete' in request.POST:
             dish.delete()
         return redirect('week_plan')
@@ -221,24 +235,43 @@ def dish_details(request, id):
 
 @login_required
 def add_dish(request):
+    NewIngredientFormSet = create_new_ingredient_form_set(request)
     if request.method == "POST":
         form = NewDish(data=request.POST)
         formset = NewIngredientFormSet(data=request.POST)
-        if form.is_valid() and formset.is_valid():
-            dish = Dish(user=request.user,
-                        name=form.cleaned_data['name'],
-                        day=form.cleaned_data['day'],
-                        time=time(hour=form.cleaned_data['time'].hour, minute=form.cleaned_data['time'].minute))
-            dish.save()
-            for item in formset:
-                print(item.cleaned_data)
-                if item.cleaned_data == {}:
-                    continue
-                else:
-                    ingredient = Ingredients(dish=dish,
-                                             ingredient=item.cleaned_data['ingredient'],
-                                             mass=item.cleaned_data['mass'])
-                    ingredient.save()
+        try:
+            if form.is_valid() and formset.is_valid():
+                dish = Dish(user=request.user,
+                            name=form.cleaned_data['name'],
+                            day=form.cleaned_data['day'],
+                            time=time(hour=form.cleaned_data['time'].hour, minute=form.cleaned_data['time'].minute))
+                dish.save()
+                for item in formset:
+                    if item.cleaned_data == {}:
+                        continue
+                    else:
+                        ingredient = Ingredients(dish=dish,
+                                                 ingredient=item.cleaned_data['ingredient'],
+                                                 mass=item.cleaned_data['mass'])
+                        ingredient.save()
+            else:
+                e = Error("You cannot pass only one argument to ingredient form! Only any or both are possible.")
+                msg = str(e)
+                form = NewDish()
+                ingredient_formset = NewIngredientFormSet(queryset=Ingredients.objects.none())
+                return render(request, "user_site/new_dish.html", {"form": form,
+                                                                   "formset": ingredient_formset,
+                                                                   "msg": msg})
+        except IntegrityError as e:
+            if str(e).startswith("CHECK"):
+                msg = str(e)[25:]
+            elif str(e).startswith("UNIQUE"):
+                msg = "Dish planned on this day with this name or in this hour already exists. Change day, name or hour of the dish."
+            form = NewDish()
+            ingredient_formset = NewIngredientFormSet(queryset=Ingredients.objects.none())
+            return render(request, "user_site/new_dish.html", {"form": form,
+                                                               "formset": ingredient_formset,
+                                                               "msg": msg})
         return redirect('week_plan')
     else:
         form = NewDish()

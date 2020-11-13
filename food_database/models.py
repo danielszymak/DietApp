@@ -15,7 +15,7 @@ CATEGORIES = (('breads', 'breads'),
               ('others', 'others'))
 
 class Products(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     category = models.CharField(max_length=100, choices=CATEGORIES)
     calories = models.PositiveIntegerField()
     proteins = models.DecimalField(decimal_places=1, max_digits=10)
@@ -24,7 +24,7 @@ class Products(models.Model):
     fats = models.DecimalField(decimal_places=1, max_digits=10)
 
     class Meta:
-        constraints = [models.CheckConstraint(check=models.Q(carbohydrates__gte=models.F('sugars')), name="Mass of sugars cannot be higher than mass of carbohydrates"), models.CheckConstraint(check=models.Q(proteins__lte=(100 - models.F("carbohydrates") - models.F("fats"))), name="Sum of proteins, carbohydrates and fat cannot be greater than 0")]
+        constraints = [models.CheckConstraint(check=models.Q(carbohydrates__gte=models.F('sugars')), name="Mass of sugars cannot be higher than mass of carbohydrates"), models.CheckConstraint(check=models.Q(proteins__lte=(100 - models.F("carbohydrates") - models.F("fats"))), name="Sum of proteins, carbohydrates and fats cannot be greater than 100")]
 
     def __str__(self):
         return self.name

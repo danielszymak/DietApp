@@ -16,9 +16,6 @@ class ProductToUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     product = models.ForeignKey(Products, on_delete=models.CASCADE)
 
-    class Meta:
-        unique_together = ('user', 'product')
-
     def __str__(self):
         return self.product.name
 
@@ -30,7 +27,7 @@ class Dish(models.Model):
     time = models.TimeField()
 
     class Meta:
-        unique_together = [('day', 'time', 'name', 'user'), ('day', 'name', 'user')]
+        unique_together = [('day', 'time', 'user'), ('day', 'name', 'user')]
 
     def __str__(self):
         return f"{self.user}'s {self.day} {self.name}"
@@ -38,7 +35,7 @@ class Dish(models.Model):
 
 class Ingredients(models.Model):
     dish = models.ForeignKey(Dish, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey(Products, on_delete=models.CASCADE)
+    ingredient = models.ForeignKey(ProductToUser, on_delete=models.CASCADE)
     mass = models.PositiveIntegerField()
 
     def __str__(self):

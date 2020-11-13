@@ -34,7 +34,6 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'food_database',
     'user_site',
-    'jsonfield',
     'crispy_forms',
     'django.contrib.admin',
     'django.contrib.auth',

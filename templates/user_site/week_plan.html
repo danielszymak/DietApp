@@ -20,7 +20,7 @@ Week plan
         <tr>
             {% for data in row %}
                 {% if data.id %}
-                <td class="td-hover" style="text-align: center"><a href="{% url 'dish_details' data.id %}">{{ data.name }}</a></td>
+                <td class="td-hover" style="text-align: center"><a href="{% url 'dish_details' data.id %}" class="text-reset text-decoration-none">{{ data.name }}</a></td>
                 {% else %}
                 <th class="td-hover" style="text-align: center">{{ data }}</th>
                 {% endif %}
