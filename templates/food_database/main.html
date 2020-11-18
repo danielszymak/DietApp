@@ -13,5 +13,24 @@ Main view
         {{ form | crispy }}
 
         <button type="submit" class="btn btn-outline-secondary">Sign in</button>
+        <button type="button" class="btn btn-outline-secondary hint-button" value="close">If you want to test this app...</button>
     </form>
+    <script>
+        let hintContainer = document.createElement('div')
+        let button = document.querySelector('.hint-button')
+        let wrapper = document.querySelector('.wrapper')
+        function openHint() {
+            hintContainer.innerHTML = "Login: tester<br>Password: TestPassword"
+            if (button.value == 'close') {
+                wrapper.appendChild(hintContainer)
+                button.value = 'open'
+                button.innerHTML = "Close hint"
+            } else if (button.value == 'open') {
+                wrapper.removeChild(hintContainer)
+                button.value = "close"
+                button.innerHTML = "If you want to test this app..."
+            }
+        }
+        button.addEventListener('click', openHint)
+    </script>
 {% endblock %}
