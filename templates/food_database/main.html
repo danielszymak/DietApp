@@ -8,7 +8,7 @@ Main view
     <form role="form" action="{% url 'player_login' %}" method="post">
         {% csrf_token %}
 
-        <p>Please login.</p>
+        <p>Please login</p>
 
         {{ form | crispy }}
 
